@@ -1,0 +1,11 @@
+[workspace]
+
+members = [
+  "report-repair",
+  "password-philosophy",
+  "toboggan-trajectory",
+  "passport-processing",
+  "binary-boarding",
+  "custom-customs",
+  "handy-haversnacks"
+]

@@ -1,0 +1,11 @@
+[workspace]
+
+members = [
+    "not-quite-lisp",
+    "no-math",
+    "spherical-houses",
+    "stocking-stuffer",
+    "intern-elves",
+    "fire-hazard",
+    "assembly-required"
+]

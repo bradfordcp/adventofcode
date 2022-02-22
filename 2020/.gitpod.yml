@@ -1,0 +1,16 @@
+image: .gitpod.Dockerfile
+tasks:
+  - command: |
+      rustup install nightly
+      rustup default nightly
+      cargo check
+      cargo build
+      cargo run
+
+vscode:
+  extensions: 
+    - hbenl.vscode-test-explorer@2.19.2:8rKHUShFJJd0UivektEkng==
+    - Swellaby.vscode-rust-test-adapter@0.11.0:UCqr+VIDide9gBXalCfKtw==
+    - belfz.search-crates-io@1.2.1:7JPZg656GbRsrWJeg+vvrw==
+    - serayuzgur.crates@0.5.3:BFdrxuSWCNt2CbdvNOlMgw==
+    - bungcip.better-toml@0.3.2:bHWX++/U0u3IDNSrnlEAeA==
