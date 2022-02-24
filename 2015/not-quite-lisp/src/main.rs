@@ -1,5 +1,5 @@
-use std::fs;
 use not_quite_lisp::*;
+use std::fs;
 
 fn main() {
     let input = fs::read_to_string("input.txt").expect("Utter failure reading input");

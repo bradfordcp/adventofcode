@@ -1,19 +1,19 @@
-use std::fs;
 use spherical_houses::*;
+use std::fs;
 
 fn main() {
-    let directions: Vec<Direction> = fs::read_to_string("input.txt").expect("Error reading input.")
-    .trim()
-    .chars()
-    .map(|direction| {
-        match direction {
+    let directions: Vec<Direction> = fs::read_to_string("input.txt")
+        .expect("Error reading input.")
+        .trim()
+        .chars()
+        .map(|direction| match direction {
             '^' => Direction::North,
             '>' => Direction::East,
             'v' => Direction::South,
             '<' => Direction::West,
-            _ => panic!("Encountered unexpected direction: {direction}.")
-        }
-    }).collect();
+            _ => panic!("Encountered unexpected direction: {direction}."),
+        })
+        .collect();
 
     let mut santa = Santa::default();
     for direction in directions.clone() {
@@ -37,9 +37,7 @@ fn main() {
     }
     let mut visited = santa.visited.clone();
     visited.append(&mut robos.visited.clone());
-    let combined_santa = Santa{
-        visited
-    };
+    let combined_santa = Santa { visited };
     let houses_visited = combined_santa.houses_visited();
 
     println!("Puzzle 2:");
