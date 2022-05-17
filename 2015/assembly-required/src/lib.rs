@@ -8,7 +8,7 @@ use signal::*;
 
 pub trait Circuit {
     fn new(schematic: &Vec<Signal>) -> Self;
-    fn get(&self, id: &str) -> Option<&u16>;
+    fn get(&self, id: &str) -> Option<u16>;
 }
 
 pub struct SimpleCircuit {
@@ -34,12 +34,13 @@ impl Circuit for SimpleCircuit {
                 .filter(|signal| {
                     match signal {
                         Signal::VALUE(Component::ID(id), Component::VALUE(val)) => {
-                            signals.insert(id.clone(), *val);
+                            signals.insert(id.clone(), val.clone());
                             false
                         }
                         Signal::VALUE(Component::ID(id), Component::ID(src_id)) => {
                             if let Some(val) = signals.get(&src_id.clone()) {
-                                signals.insert(id.clone(), *val);
+                                let val = val.clone();
+                                signals.insert(id.clone(), val);
                                 false
                             } else {
                                 true
@@ -47,6 +48,7 @@ impl Circuit for SimpleCircuit {
                         }
                         Signal::NOT(Component::ID(id), Component::ID(src)) => {
                             if let Some(val) = signals.get(&src.clone()) {
+                                let val = val.clone();
                                 signals.insert(id.clone(), !val);
                                 false
                             } else {
@@ -57,6 +59,8 @@ impl Circuit for SimpleCircuit {
                             if let (Some(a), Some(b)) =
                                 (signals.get(&in1.clone()), signals.get(&in2.clone()))
                             {
+                                let a = a.clone();
+                                let b = b.clone();
                                 signals.insert(id.clone(), a & b);
                                 false
                             } else {
@@ -67,6 +71,9 @@ impl Circuit for SimpleCircuit {
                             if let Some(b) =
                                 signals.get(&in2.clone())
                             {
+                                let a = a.clone();
+                                let b = b.clone();
+
                                 signals.insert(id.clone(), a & b);
                                 false
                             } else {
@@ -77,6 +84,9 @@ impl Circuit for SimpleCircuit {
                             if let (Some(a), Some(b)) =
                                 (signals.get(&in1.clone()), signals.get(&in2.clone()))
                             {
+                                let a  = a.clone();
+                                let b = b.clone();
+
                                 signals.insert(id.clone(), a | b);
                                 false
                             } else {
@@ -87,6 +97,9 @@ impl Circuit for SimpleCircuit {
                             if let (Some(a), Some(b)) =
                                 (signals.get(&in1.clone()), signals.get(&in2.clone()))
                             {
+                                let a  = a.clone();
+                                let b = b.clone();
+
                                 signals.insert(id.clone(), a ^ b);
                                 false
                             } else {
@@ -99,6 +112,9 @@ impl Circuit for SimpleCircuit {
                             Component::VALUE(places),
                         ) => {
                             if let Some(input) = signals.get(&input_id.clone()) {
+                                let input = input.clone();
+                                let places = places.clone();
+
                                 signals.insert(id.clone(), input << places);
                                 false
                             } else {
@@ -111,6 +127,9 @@ impl Circuit for SimpleCircuit {
                             Component::VALUE(places),
                         ) => {
                             if let Some(input) = signals.get(&input_id.clone()) {
+                                let input = input.clone();
+                                let places = places.clone();
+                                
                                 signals.insert(id.clone(), input >> places);
                                 false
                             } else {
@@ -128,16 +147,190 @@ impl Circuit for SimpleCircuit {
         SimpleCircuit { signals }
     }
 
-    fn get(&self, id: &str) -> Option<&u16> {
-        self.signals.get(&id.to_string())
+    fn get(&self, id: &str) -> Option<u16> {
+        self.signals.get(&id.to_string()).map(|v| v.clone())
+    }
+}
+
+pub struct GraphCircuit {
+    signals: HashMap<String, Signal>
+}
+
+impl Circuit for GraphCircuit {
+    fn new(schematic: &Vec<Signal>) -> Self {
+        let mut signals = HashMap::new();
+
+        schematic.iter().for_each(|signal| {
+            match signal.clone() {
+                Signal::VALUE(Component::ID(id), _) => {signals.insert(id.clone(), signal.clone());},
+                Signal::NOT(Component::ID(id), _) => {signals.insert(id.clone(), signal.clone());},
+                Signal::AND(Component::ID(id), _, _) => {signals.insert(id.clone(), signal.clone());},
+                Signal::OR(Component::ID(id), _, _) => {signals.insert(id.clone(), signal.clone());},
+                Signal::XOR(Component::ID(id), _, _) => {signals.insert(id.clone(), signal.clone());},
+                Signal::LSHIFT(Component::ID(id), _, _) => {signals.insert(id.clone(), signal.clone());},
+                Signal::RSHIFT(Component::ID(id), _, _) => {signals.insert(id.clone(), signal.clone());},
+                _ => panic!("Encountered unhandled signal {:?}", signal)
+            }
+        });
+
+        GraphCircuit { signals }
+    }
+
+    fn get(&self, id: &str) -> Option<u16> {
+        if let Some(signal) = self.signals.get(&id.to_string()) {
+            match signal.clone() {
+                Signal::VALUE(_, Component::VALUE(val)) => Some(val),
+                _ => panic!("Encountered unhandled signal {:?}", signal)
+            }
+        } else {
+            None
+        }
     }
 }
 
 #[cfg(test)]
 mod test {
-    use super::*;
+    mod graph_circuit {
+        use super::super::*;
 
-    
+        #[test]
+        fn test_processing_signal_value() {
+            let a = Signal::parse("0 -> foo");
+            let b = Signal::parse("1 -> bar");
+            let g = GraphCircuit::new(&vec![a.clone(), b.clone()]);
+
+            let mut expected = HashMap::new();
+            expected.insert("foo".to_string(), a);
+            expected.insert("bar".to_string(), b);
+
+            assert_eq!(expected, g.signals);
+
+            let a = Signal::parse("0 -> foo");
+            let b = Signal::parse("foo -> bar");
+            let g = GraphCircuit::new(&vec![a.clone(), b.clone()]);
+
+            let mut expected = HashMap::new();
+            expected.insert("foo".to_string(), a);
+            expected.insert("bar".to_string(), b);
+
+            assert_eq!(expected, g.signals);
+        }
+
+        #[test]
+        fn test_processing_signal_not() {
+            let a = Signal::parse("0 -> a");
+            let b = Signal::parse("NOT a -> b");
+            let g = GraphCircuit::new(&vec![a.clone(), b.clone()]);
+
+            let mut expected = HashMap::new();
+            expected.insert("a".to_string(), a);
+            expected.insert("b".to_string(), b);
+
+            assert_eq!(expected, g.signals)
+        }
+
+        #[test]
+        fn test_processing_signal_and() {
+            let a = Signal::parse("0 -> a");
+            let b = Signal::parse("1 -> b");
+            let c = Signal::parse("a AND b -> c");
+            let g = GraphCircuit::new(&vec![
+                a.clone(),
+                b.clone(),
+                c.clone(),
+            ]);
+
+            let mut expected = HashMap::new();
+            expected.insert("a".to_string(), a);
+            expected.insert("b".to_string(), b);
+            expected.insert("c".to_string(), c);
+
+            assert_eq!(expected, g.signals);
+
+            let a = Signal::parse("0 -> a");
+            let b = Signal::parse("1 AND a -> b");
+            let g = GraphCircuit::new(&vec![
+                a.clone(),
+                b.clone(),
+            ]);
+
+            let mut expected = HashMap::new();
+            expected.insert("a".to_string(), a);
+            expected.insert("b".to_string(), b);
+
+            assert_eq!(expected, g.signals);
+        }
+
+        #[test]
+        fn test_processing_signal_or() {
+            let a = Signal::parse("0 -> a");
+            let b = Signal::parse("1 -> b");
+            let c = Signal::parse("a OR b -> c");
+            let g = GraphCircuit::new(&vec![
+                a.clone(),
+                b.clone(),
+                c.clone(),
+            ]);
+
+            let mut expected = HashMap::new();
+            expected.insert("a".to_string(), a);
+            expected.insert("b".to_string(), b);
+            expected.insert("c".to_string(), c);
+
+            assert_eq!(expected, g.signals)
+        }
+
+        #[test]
+        fn test_processing_signal_xor() {
+            let a = Signal::parse("0 -> a");
+            let b = Signal::parse("1 -> b");
+            let c = Signal::parse("a XOR b -> c");
+            let g = GraphCircuit::new(&vec![
+                a.clone(),
+                b.clone(),
+                c.clone(),
+            ]);
+
+            let mut expected = HashMap::new();
+            expected.insert("a".to_string(), a);
+            expected.insert("b".to_string(), b);
+            expected.insert("c".to_string(), c);
+
+            assert_eq!(expected, g.signals)
+        }
+
+        #[test]
+        fn test_processing_signal_lshift() {
+            let a = Signal::parse("1 -> a");
+            let b = Signal::parse("a LSHIFT 2 -> b");
+            let g = GraphCircuit::new(&vec![
+                a.clone(),
+                b.clone(),
+            ]);
+
+            let mut expected = HashMap::new();
+            expected.insert("a".to_string(), a);
+            expected.insert("b".to_string(), b);
+
+            assert_eq!(expected, g.signals)
+        }
+
+        #[test]
+        fn test_processing_signal_rshift() {
+            let a = Signal::parse("1 -> a");
+            let b = Signal::parse("a RSHIFT 2 -> b");
+            let g = GraphCircuit::new(&vec![
+                a.clone(),
+                b.clone(),
+            ]);
+
+            let mut expected = HashMap::new();
+            expected.insert("a".to_string(), a);
+            expected.insert("b".to_string(), b);
+
+            assert_eq!(expected, g.signals)
+        }
+    }
 
     mod simple_circuit {
         use super::super::*;
@@ -257,6 +450,14 @@ mod test {
             expected.insert("b".to_string(), 0);
 
             assert_eq!(expected, c.signals)
+        }
+
+        #[test]
+        fn test_get_signal() {
+            let c = SimpleCircuit::new(&vec![Signal::parse("1 -> a")]);
+
+            let expected = Some(1_u16);
+            assert_eq!(expected, c.get("a"))
         }
     }
 }

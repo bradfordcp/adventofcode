@@ -10,9 +10,10 @@ fn main() {
         .map(|signal| Signal::parse(signal))
         .collect();
     let circuit = SimpleCircuit::new(&schematic);
+    let a = circuit.get("a").expect("Could not find value for wire \"a\".");
 
     println!("Puzzle 1:");
-    println!("a value: {}\n", circuit.get("a").expect("Could not find value for wire \"a\"."));
+    println!("a value: {}\n", a);
 
     let mut schematic: Vec<Signal> = schematic
         .iter()
@@ -24,7 +25,7 @@ fn main() {
         })
         .map(|signal| signal.to_owned())
         .collect();
-    schematic.push(Signal::parse("3167 -> b"));
+    schematic.push(Signal::parse(format!("{} -> b", a).as_str()));
     let circuit = SimpleCircuit::new(&schematic);
 
     println!("Puzzle 2:");
