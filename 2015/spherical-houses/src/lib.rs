@@ -23,6 +23,7 @@ impl Default for Santa {
 impl Santa {
     pub fn traverse(&mut self, direction: Direction) {
         let last = self.visited.last().expect("Error fetching last location");
+        let last = last.clone();
 
         match direction {
             Direction::North => self.visited.push((last.0, last.1 + 1)),
