@@ -7,5 +7,6 @@ members = [
     "stocking-stuffer",
     "intern-elves",
     "fire-hazard",
-    "assembly-required"
+    "assembly-required",
+    "matchsticks"
 ]
