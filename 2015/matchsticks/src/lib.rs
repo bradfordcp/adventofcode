@@ -3,8 +3,8 @@ pub fn code_count(input: &str) -> usize {
 }
 
 pub fn char_count(input: &str) -> usize {
-    let ESCAPE_PREFIX = "\\";
-    let ESCAPE_HEX_PREFIX = "\\x";
+    const ESCAPE_PREFIX: &str = "\\";
+    const ESCAPE_HEX_PREFIX: &str = "\\x";
 
     input
         .chars()
@@ -35,6 +35,24 @@ pub fn char_count(input: &str) -> usize {
         })
         .0
         - 2
+}
+
+pub fn encode(input: &str) -> String {
+  let body: String = input
+    .chars()
+    .into_iter()
+    .map(|ele| {
+      if ele == '"' {
+        format!("\\{}", ele)
+      } else if ele == '\\' {
+        format!("\\{}", ele)
+      } else {
+        format!("{}", ele)
+      }
+    })
+    .collect();
+
+    format!("\"{}\"", body)
 }
 
 #[cfg(test)]
@@ -71,5 +89,49 @@ mod test {
 
         assert_eq!(code_count(input), 6);
         assert_eq!(char_count(input), 1);
+    }
+
+    #[test]
+    fn test_encode_empty() {
+      let input = "\"\"";
+
+      let expected = "\"\\\"\\\"\"";
+      let actual = encode(input);
+
+      assert_eq!(expected, actual);
+      assert_eq!(6, actual.len());
+    }
+
+    #[test]
+    fn test_encode_simple() {
+      let input = "\"abc\"";
+
+      let expected = "\"\\\"abc\\\"\"";
+      let actual = encode(input);
+
+      assert_eq!(expected, actual);
+      assert_eq!(9, actual.len());
+    }
+
+    #[test]
+    fn test_encode_escaped_quote() {
+      let input = "\"aaa\\\"aaa\"";
+
+      let expected = "\"\\\"aaa\\\\\\\"aaa\\\"\"";
+      let actual = encode(input);
+
+      assert_eq!(expected, actual);
+      assert_eq!(16, actual.len());
+    }
+
+    #[test]
+    fn test_encode_escaped_hex() {
+      let input = "\"\\x27\"";
+
+      let expected = "\"\\\"\\\\x27\\\"\"";
+      let actual = encode(input);
+
+      assert_eq!(expected, actual);
+      assert_eq!(11, actual.len());
     }
 }
