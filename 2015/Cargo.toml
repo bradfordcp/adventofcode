@@ -8,5 +8,6 @@ members = [
     "intern-elves",
     "fire-hazard",
     "assembly-required",
-    "matchsticks"
+    "matchsticks",
+    "single-night"
 ]
